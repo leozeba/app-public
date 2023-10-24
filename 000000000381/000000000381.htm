@@ -1,0 +1,814 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title>MEMORIAS | Your personal web3 database</title>
+  <meta name="description" content="Collect, manage, safeguard, augment & share data">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="google-signin-client_id" content="24613691161-3a990mj8uer0uero52cml7u34odspqe6.apps.googleusercontent.com">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="themes/default/icon.png">
+  <!-- Place favicon.ico in the root directory -->
+  <link rel="shortcut icon" href="themes/default/favicon.ico" />
+
+  <!-- fontawesome.com -->
+  <link rel="stylesheet" href="themes/default/css/all.min.css">
+  <!-- bulma.io -->
+  <link rel="stylesheet" href="themes/default/css/bulma.min.css">
+  <link rel="stylesheet" href="themes/default/css/bulma-pageloader.min.css">
+
+  <!-- highlight.min.js -->
+  <link rel="stylesheet" href="themes/default/css/styles/default.min.css">
+
+  <!-- memori.as -->
+  <link rel="stylesheet" href="themes/default/css/memori.as.css">
+
+  <style>
+    #recipients .button:hover {
+      color: var(--color-4) !important;
+    }
+
+    .element.image, .element.video, .element.file {
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    .tags {
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .tag.augment-face.age {
+      border-color: var(--color-0) !important;
+      color: var(--color-0) !important;
+      background: var(--color-4) !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="app" style="display: hidden;" v-cloak>
+    <!-- pageloader -->
+    <div class="pageloader is-white">
+      <span class="title">Loading...</span>
+    </div>
+
+    <section class="hero is-fullheight">
+      <!-- navbar -->
+      <nav class="navbar header" role="navigation" aria-label="main navigation">
+        <div id="navbarBasicExample" class="navbar-menu">
+          <div class="navbar-start">
+              <img src="themes/default/img/memorias.png" style="height: 3.5rem;"/>
+          </div>
+          <div class="navbar-end">
+            <div id="actions">
+              <div class="container-01">
+                <div class="container-02">
+                  <div class="field has-addons">
+                    <a id="show-code" class="button button-1 is-medium is-circle" v-on:click="showCode()">
+                      <span class="icon">
+                        <!-- <i class="fa fa-share-alt"></i> -->
+                        <i class="fas fa-code"></i>
+                      </span>
+                    </a>
+                    <a id="hide-code" class="button is-medium is-circle is-borderless" v-on:click="hideCode()" style="display: none;">
+                      <span class="icon">
+                        <!-- <i class="fa fa-share-alt"></i> -->
+                        <i class="fa fa-chevron-left"></i>
+                      </span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- message -->
+      <article class="message is-danger" style="display: none;">
+        <div class="message-body" style="border-radius: 0;">
+          <p style="font-size: 1.25rem;"></p>
+        </div>
+      </article>
+
+      <!-- elements -->
+      <div id="elements-container" class="hero-body">
+        <div class="container">
+          <div class="box-title" v-if="aio != null">
+            <article class="media">
+              <div class="media-left is-hidden-mobile">
+                <div class="thumb is-circle" v-bind:style="'background-image: url(assets/author--' + aio.author.replace('::', '--') + '-picture.png); border: 1px solid var(--color-3);'">
+                </div>
+              </div>
+              <div class="media-content">
+                <div class="content">
+                  <!-- Title -->
+                  <p class="title">
+                    <strong>
+                      {{ title(aio) }}
+                    </strong>
+                  </p>
+                  <!-- Tags -->
+                  <div class="tags" v-if="tags(aio).length > 0">
+                    <span class="tag is-medium is-rounded" v-for="(tag, index) in tags(aio)" style="margin-right: 0.5rem;">#{{ tag }}</span>
+                    <span class="tag updated is-medium is-rounded">{{ aio.Updated }}{{ aio.updated }}</span>
+                  </div>
+                  <!-- Signature -->
+                  <div class="signature">
+                    <span class="icon-text tag sig is-medium is-rounded" v-if="aio != undefined && sig != ''">
+                      <span class="icon">
+                        <i class="fab fa-ethereum"></i>
+                      </span>
+                      <span v-bind:data-sig="sig">{{ sig.substring(0, 16) }}...{{ sig.substring(sig.length - 4) }}</span>
+                    </span>
+                  </div>
+                  <!-- Recipients -->
+                  <div class="recipients has-text-left">
+                    <div class="field has-addons">
+                      <div id="recipients" class="control" style="width: 100%; display: flex; background: transparent; padding: 0;">
+                        <!-- author -->
+                        <div class="author">
+                          <button class="button is-rounded is-borderless is-fullwidth" v-bind:data-uuid="uuid('author')" style="border: 1px solid var(--color-3); justify-content: flex-start; margin: 0 0.5rem 0 0; border-radius: 5rem; padding-right: 0.25rem; cursor: default;">
+                            <span class="has-badge-rounded has-badge-info">{{ uuid('author') }}</span>
+                          </button>
+                        </div>
+                        <!-- recipient (uuid) -->
+                        <div class="recipient" v-if="isRecipient('')">
+                          <a class="button is-fullwidth" v-bind:data-uuid="uuid()" v-bind:title="uuid()" style="justify-content: flex-start; margin: 0; border-radius: 5rem; padding-right: 0.25rem;  background: var(--color-1); border-color: var(--color-1); color: var(--color-4); cursor: default; padding-left: 0.5rem; padding-right: 0.5rem;">
+                            <span class="icon" style="width: 2rem; height: 2rem;" v-if="uuid('author') != uuid()">
+                              <img v-bind:src="picture()" class="is-circle">
+                            </span>
+                            <span class="has-badge-rounded has-badge-info" v-if="uuid('author') == uuid()">{{ uuid() }}</span>
+                          </a>
+                        </div>
+                        <!-- recipient (others) -->
+                        <div class="recipient" v-for="(recipient, index) in aio.recipients">
+                          <!-- "uuid() != recipient" -->
+                          <a v-bind:href="'account.html?auid=' + recipient" class="button is-fullwidth" v-bind:data-uuid="recipient" v-bind:title="recipient" style="justify-content: flex-start; margin: 0; border-radius: 5rem; padding-right: 0.25rem; padding-left: 0.5rem; padding-right: 0.5rem;" v-if="recipient != 'app::public'">
+                            <span class="icon" style="width: 2rem; height: 2rem;">
+                              <img v-bind:src="accountPicture(recipient)" class="is-circle">
+                            </span>
+                            <span class="has-badge-rounded has-badge-info" v-if="index < 0">{{ recipient }}</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="media-right">
+                <!-- app::public -->
+                <p id="public" v-if="isRecipient('app::public')">
+                  <span class="tag is-small" style="border-radius: 2rem; background: var(--color-0); color: var(--color-4);">app::public</span>
+                  <span class="tag is-small" style="border-radius: 2rem; background: var(--color-4); color: var(--color-1);"><a id="www" v-bind:href="'https://memori.as/app::public/' + uuid() + '/' + aio['Id'] + '/' + aio['Id'] + '.htm'" target="_blank">WWW</a></span>
+                  <span class="tag is-small" style="border-radius: 2rem; background: var(--color-4); color: var(--color-1);"><a id="ipfs" v-bind:href="'https://ipfs.io/ipfs/' + aio['Cid'] + '/' + aio['Id'] + '.zip'" target="_blank">IPFS</a></span>
+                  <span class="tag is-small" style="border-radius: 2rem; background: var(--color-4); color: var(--color-1);"><a id="w3link" v-bind:href="'https://' + aio['Link'] + '.ipfs.w3s.link/' + aio['Id'] + '.htm'" target="_blank">W3LINK</a></span>
+                </p>
+              </div>
+            </article>
+          </div>
+
+          <!-- content -->
+          <div id="content" class="column" style="min-height: 40rem;">
+            <div id="elements">
+            </div>
+          </div>
+
+          <hr>
+
+          <!-- box-reply -->
+          <div id="reply-aio" class="column" v-if="aio != null && aio.Reply != undefined && aio.Reply != ''" style="padding: 0.75rem;">
+            <div class="box box-reply">
+              <article class="media">
+                  <div class="media-left">
+                    <figure class="image is-96x96">
+                      <img v-if="uuid() == replyAuthor(aio.Reply)" v-bind:src="picture()" class="is-circle">
+                      <img v-else v-bind:src="replyProfileImageUrl(aio.Reply)" class="is-circle">
+                    </figure>
+                  </div>
+
+                  <div class="media-content">
+                    <div class="content">
+                      <p id="title" class="title" style="padding-left: 0; margin-top: 0; font-size: 2.5rem; margin-bottom: 0; font-family: 'Roboto Slab', serif;">
+                        <strong>
+                          <a v-bind:href="'viewer.html?aio=' + replyAio(aio.Reply) + '&author=' + replyAuthor(aio.Reply)" style="color:var(--color-0);">{{ replyTitle(aio.Reply) }}</a>
+                        </strong>
+                      </p>
+                    </div>
+                    <div class="tags">
+                      <span class="tag is-medium is-rounded is-black" v-if="uuid() == replyAuthor(aio.Reply)" style="cursor: default;">{{ replyAuthor(aio.Reply) }}</span>
+                      <span class="tag is-medium is-rounded is-black" v-else>{{ replyAuthor(aio.Reply) }}</span>
+
+                      <span class="tag is-medium is-rounded" v-for="(tag, index) in tags(aio)" style="margin-right: 0.5rem;">{{ '#' + tag }}</span>
+                      <span class="tag updated is-medium is-rounded">{{ replyUpdated(aio.Reply) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="media-right">
+                  </div>
+                </article>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- code -->
+      <div id="code-container" class="hero-body" style="display: none;">
+        <div class="container">
+          <div class="box">
+            <pre style="background: var(--color-0) !important; color: var(--color-4) !important; padding: 0rem 1.5rem;">
+              <code id="mem" class="language-bash" style="background: var(--color-0) !important; color: var(--color-4) !important; font-size: 1rem;">
+#
+# Download MEMORIAS
+# git clone https://github.com/leozeba/MEMORIAS
+#
+go run MEMORIAS.go --verify <b id="ipfs-url">IPFS_URL</b>
+              </code>
+            </pre>
+          </div>
+
+          <div class="box">
+            <h1 class="title">What is a MEMORIA?</h1>
+            <br/>
+            <p class="subtitle">
+              A JSON token file with the following attributes:
+              <ul style="list-style: disc; margin-left: 2rem;">
+                <li>author</li>
+                <li>title</li>
+                <li>recipients</li>
+                <li>reply</li>
+                <li>updated</li>
+                <li>list of elements (text, image, video, audio, file, brain)</li>
+                <li style="list-style: none; color: var(--color-1);">
+                  Every element has the following attributes: <b>id</b>, <b>type</b>, <b>data</b>, and <b>param</b>. The <b>param</b> depends on the element type:
+                  <br><br>
+                  <b>text</b>
+                  <br>
+                  - The plain text
+                  <br>
+                  <b>image, video, audio, file, brain</b>
+                  <br>
+                  - The hash (SHA3-512) of the binary content and the binary content-type (.png, .jpg, .jpeg, .gif, .mov, .pdf, .file) as extension.
+                  <br>
+                  ex. "020aca4164b392d9...83dd4a271b889660.<b>jpeg</b>"
+                  <br>
+                  <br>
+                </li>
+              </ul>
+              <br>
+            </p>
+            <pre><code id="aio" class="language-json"></code></pre>
+          </div>
+          <div class="box">
+            <h1 class="title">How to validate this MEMORIA?</h1>
+            <br/>
+            <p class="subtitle">
+              To validate the content in this MEMORIA we need to:
+
+              <ul style="list-style: disc; margin-left: 2rem;">
+                <li>Download the IPFS_URL zip file;</li>
+                <li>Unzip the file;</li>
+                <li>Calculate the hash (SHA3-512) of all binary elements located in the <b>assets/</b> folder;</li>
+                <li style="list-style: none; color: var(--color-1);">
+                  The hash of each asset must match the prefix of the param value in the element.
+                  <br>
+                  This will guarantee that the assets in this MEMORIA are valid and have not been tampered.
+                  <br>
+                  All elements of type text are directly embedded in the JSON file.
+                </li>
+              </ul>
+            </p>
+          </div>
+          <div class="box">
+            <h1 class="title">How to verify the signature of this MEMORIA?</h1>
+            <br/>
+            <p class="subtitle">
+              To verify the signature of a signed MEMORIA we need to:
+              <ul style="list-style: disc; margin-left: 2rem;">
+                <li>Recover the signer's public key from the signature (.sig) and MEMORIA (.aio);</li>
+                <li>Recover the signer's address from the public key</li>
+                <li style="list-style: none; color: var(--color-1);">
+                  The recovered address must match the suffix of the "author" of MEMORIA.
+                </li>
+              </ul>
+            </p>
+            <pre><code id="sig" class="language-json"></code></pre>
+          </div>
+          <div class="box">
+            <h1 class="title">Augmented Inteligent Output</h1>
+            <br/>
+            <p class="subtitle">
+              These are the augmentations for this MEMORIA. It disclaims the models used for augmenting every element
+              as well as their results. It's a JSON file with the (.aug) extension. <a id="show-content" v-on:click="showContent()"><b>show content</b></a>
+            </p>
+            <pre id="the-content" style="display: none;"><code id="aug" class="language-json"></code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- navbar -->
+      <nav class="navbar footer" role="navigation" aria-label="main navigation">
+        <div id="navbarBasicExample" class="navbar-menu">
+          <div class="navbar-start">
+          </div>
+          <div class="navbar-end">
+          </div>
+        </div>
+      </nav>
+    </section>
+  </div>
+
+  <!-- vue.js -->
+  <script src="themes/default/js/vue.js"></script>
+  <script src="themes/default/js/axios.min.js"></script>
+  <!-- fontawesome.com -->
+  <script src="themes/default/js/all.min.js"></script>
+  <!-- http://www.jacklmoore.com/autosize/ -->
+  <script src="themes/default/js/autosize.min.js"></script>
+
+  <!-- d3.js -->
+  <script src="themes/default/js/d3.min.js"></script>
+  <!-- https://www.jasondavies.com/wordcloud/ -->
+  <script src="themes/default/js/d3.layout.cloud.js"></script>
+
+  <!-- highlight.min.js -->
+  <script src="themes/default/js/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+
+  <!-- m.js -->
+  <script src="themes/default/js/m.js"></script>
+  <!-- m.xhr.js -->
+  <script src="themes/default/js/m.xhr.js"></script>
+
+  <script>
+    window.addEventListener('load', function(){
+      var APP = new Vue({
+        el: "#app",
+        data: {
+          e: 0,
+          aio: null,
+          sig: null,
+          aug: null,
+          accounts: [],
+          recipients: [],
+          aioToSign: null
+        },
+        methods: {
+          minit: function() {
+            console.log("> minit");
+            this.mload();
+          },
+          mload: function() {
+            console.log("> mload");
+
+            var elements = [];
+
+            var aio = `{"author":"twitter::@leozeba","title":"The title! #tag1 #tag2 #tag3","recipients":["app::public"],"reply":"","updated":"2023-10-24 10:17:12","elements":[{"id":"image-1","type":"image","param":"020aca4164b392d9787810f7be14830381633465e303204b443536e4cc87281e00dd0736c166ec533e575193e2613cd7e579266f608f8eaa83dd4a271b889660.jpeg","data":{"name":""}}]}`;
+            aio = aio.replace(/\n/g, "\\n");
+
+            var aug = `{"image-1":{"augment":{"faces":{"FaceDetails":[{"AgeRange":{"High":35,"Low":25},"Beard":{"Confidence":91.14048767089844,"Value":false},"BoundingBox":{"Height":0.0820847898721695,"Left":0.28341051936149597,"Top":0.0999877080321312,"Width":0.04066312313079834},"Confidence":99.94766998291016,"Emotions":[{"Confidence":99.67440032958984,"Type":"SURPRISED"},{"Confidence":5.974972248077393,"Type":"FEAR"},{"Confidence":2.1600449085235596,"Type":"SAD"},{"Confidence":1.384436011314392,"Type":"CALM"},{"Confidence":0.19895383715629578,"Type":"DISGUSTED"},{"Confidence":0.09726808965206146,"Type":"HAPPY"},{"Confidence":0.09253165125846863,"Type":"CONFUSED"},{"Confidence":0.053426072001457214,"Type":"ANGRY"}],"Eyeglasses":{"Confidence":97.42969512939453,"Value":false},"EyesOpen":{"Confidence":84.0216293334961,"Value":false},"Gender":{"Confidence":99.99964141845703,"Value":"Female"},"Landmarks":[{"Type":"eyeLeft","X":0.29250675439834595,"Y":0.1294994205236435},{"Type":"eyeRight","X":0.3103884756565094,"Y":0.12987539172172546},{"Type":"mouthLeft","X":0.2948187589645386,"Y":0.158213809132576},{"Type":"mouthRight","X":0.3098013699054718,"Y":0.15862730145454407},{"Type":"nose","X":0.3000682294368744,"Y":0.14689403772354126},{"Type":"leftEyeBrowLeft","X":0.2862738072872162,"Y":0.1222822293639183},{"Type":"leftEyeBrowRight","X":0.29537326097488403,"Y":0.12179453670978546},{"Type":"leftEyeBrowUp","X":0.29048773646354675,"Y":0.11990096420049667},{"Type":"rightEyeBrowLeft","X":0.30558788776397705,"Y":0.12189505994319916},{"Type":"rightEyeBrowRight","X":0.31729307770729065,"Y":0.12272315472364426},{"Type":"rightEyeBrowUp","X":0.31105396151542664,"Y":0.1201169341802597},{"Type":"leftEyeLeft","X":0.2895333468914032,"Y":0.12910883128643036},{"Type":"leftEyeRight","X":0.29604053497314453,"Y":0.1298733502626419},{"Type":"leftEyeUp","X":0.29231154918670654,"Y":0.12817087769508362},{"Type":"leftEyeDown","X":0.2925897240638733,"Y":0.1308078169822693},{"Type":"rightEyeLeft","X":0.3068265914916992,"Y":0.13007527589797974},{"Type":"rightEyeRight","X":0.31375911831855774,"Y":0.12956373393535614},{"Type":"rightEyeUp","X":0.31025850772857666,"Y":0.1285078525543213},{"Type":"rightEyeDown","X":0.31030264496803284,"Y":0.13115890324115753},{"Type":"noseLeft","X":0.29782190918922424,"Y":0.14885754883289337},{"Type":"noseRight","X":0.30444151163101196,"Y":0.14894269406795502},{"Type":"mouthUp","X":0.30117398500442505,"Y":0.1558549553155899},{"Type":"mouthDown","X":0.30164337158203125,"Y":0.16425040364265442},{"Type":"leftPupil","X":0.29250675439834595,"Y":0.1294994205236435},{"Type":"rightPupil","X":0.3103884756565094,"Y":0.12987539172172546},{"Type":"upperJawlineLeft","X":0.28468117117881775,"Y":0.12727174162864685},{"Type":"midJawlineLeft","X":0.28880950808525085,"Y":0.158548966050148},{"Type":"chinBottom","X":0.30280986428260803,"Y":0.17822489142417908},{"Type":"midJawlineRight","X":0.3203781247138977,"Y":0.1588025689125061},{"Type":"upperJawlineRight","X":0.3235577940940857,"Y":0.1276428997516632}],"MouthOpen":{"Confidence":61.4276123046875,"Value":true},"Mustache":{"Confidence":97.88175201416016,"Value":false},"Pose":{"Pitch":-3.9005417823791504,"Roll":-1.5158812999725342,"Yaw":-5.339049339294434},"Quality":{"Brightness":70.51412963867188,"Sharpness":5.775668621063232},"Smile":{"Confidence":93.65558624267578,"Value":false},"Sunglasses":{"Confidence":99.99655151367188,"Value":false}},{"AgeRange":{"High":30,"Low":22},"Beard":{"Confidence":80.50214385986328,"Value":false},"BoundingBox":{"Height":0.024184443056583405,"Left":0.4896577000617981,"Top":0.3520796597003937,"Width":0.013746082782745361},"Confidence":86.34906005859375,"Emotions":[{"Confidence":79.08100128173828,"Type":"CALM"},{"Confidence":9.559804916381836,"Type":"FEAR"},{"Confidence":6.600825309753418,"Type":"SURPRISED"},{"Confidence":3.9521281719207764,"Type":"SAD"},{"Confidence":2.8930258750915527,"Type":"CONFUSED"},{"Confidence":2.1943745613098145,"Type":"ANGRY"},{"Confidence":1.4705866575241089,"Type":"DISGUSTED"},{"Confidence":1.437684178352356,"Type":"HAPPY"}],"Eyeglasses":{"Confidence":97.50141906738281,"Value":true},"EyesOpen":{"Confidence":97.68269348144531,"Value":true},"Gender":{"Confidence":99.57927703857422,"Value":"Female"},"Landmarks":[{"Type":"eyeLeft","X":0.49653831124305725,"Y":0.36186450719833374},{"Type":"eyeRight","X":0.49798861145973206,"Y":0.36567842960357666},{"Type":"mouthLeft","X":0.493436723947525,"Y":0.3680248260498047},{"Type":"mouthRight","X":0.49462249875068665,"Y":0.37118712067604065},{"Type":"nose","X":0.4956195056438446,"Y":0.3679303824901581},{"Type":"leftEyeBrowLeft","X":0.49661216139793396,"Y":0.35886508226394653},{"Type":"leftEyeBrowRight","X":0.49775537848472595,"Y":0.3615042269229889},{"Type":"leftEyeBrowUp","X":0.4974476397037506,"Y":0.359905868768692},{"Type":"rightEyeBrowLeft","X":0.4986570477485657,"Y":0.36371174454689026},{"Type":"rightEyeBrowRight","X":0.499301016330719,"Y":0.3655436038970947},{"Type":"rightEyeBrowUp","X":0.4992743730545044,"Y":0.3643541634082794},{"Type":"leftEyeLeft","X":0.4962467551231384,"Y":0.36103495955467224},{"Type":"leftEyeRight","X":0.49678653478622437,"Y":0.3626880645751953},{"Type":"leftEyeUp","X":0.49667811393737793,"Y":0.3616425395011902},{"Type":"leftEyeDown","X":0.49638187885284424,"Y":0.3621388375759125},{"Type":"rightEyeLeft","X":0.4976743161678314,"Y":0.36499494314193726},{"Type":"rightEyeRight","X":0.4982868731021881,"Y":0.36622244119644165},{"Type":"rightEyeUp","X":0.4981692135334015,"Y":0.3654813766479492},{"Type":"rightEyeDown","X":0.49785852432250977,"Y":0.3659246265888214},{"Type":"noseLeft","X":0.49492576718330383,"Y":0.3670188784599304},{"Type":"noseRight","X":0.49554163217544556,"Y":0.3684537410736084},{"Type":"mouthUp","X":0.4944806396961212,"Y":0.3691413700580597},{"Type":"mouthDown","X":0.49352142214775085,"Y":0.3706071674823761},{"Type":"leftPupil","X":0.49653831124305725,"Y":0.36186450719833374},{"Type":"rightPupil","X":0.49798861145973206,"Y":0.36567842960357666},{"Type":"upperJawlineLeft","X":0.4953364431858063,"Y":0.3581371605396271},{"Type":"midJawlineLeft","X":0.49220532178878784,"Y":0.36476996541023254},{"Type":"chinBottom","X":0.49187853932380676,"Y":0.372801810503006},{"Type":"midJawlineRight","X":0.49521926045417786,"Y":0.37166810035705566},{"Type":"upperJawlineRight","X":0.49886706471443176,"Y":0.36657828092575073}],"MouthOpen":{"Confidence":85.4183349609375,"Value":false},"Mustache":{"Confidence":95.2323226928711,"Value":false},"Pose":{"Pitch":4.3164753913879395,"Roll":27.327136993408203,"Yaw":-5.637838840484619},"Quality":{"Brightness":66.45379638671875,"Sharpness":1.0484901666641235},"Smile":{"Confidence":92.12797546386719,"Value":false},"Sunglasses":{"Confidence":99.81367492675781,"Value":false}}],"OrientationCorrection":null},"labels":{"LabelModelVersion":"3.0","Labels":[{"Confidence":99.2813491821289,"Instances":[{"BoundingBox":{"Height":0.5893679857254028,"Left":0.1494646668434143,"Top":0.050776537507772446,"Width":0.3127489686012268},"Confidence":99.2813491821289},{"BoundingBox":{"Height":0.709848940372467,"Left":0.6006394624710083,"Top":0.1580326408147812,"Width":0.34776318073272705},"Confidence":99.26979064941406}],"Name":"Adult","Parents":[{"Name":"Person"}]},{"Confidence":99.2813491821289,"Instances":[{"BoundingBox":{"Height":0.5893679857254028,"Left":0.1494646668434143,"Top":0.050776537507772446,"Width":0.3127489686012268},"Confidence":99.2813491821289}],"Name":"Female","Parents":[{"Name":"Person"}]},{"Confidence":99.2813491821289,"Instances":[{"BoundingBox":{"Height":0.5893679857254028,"Left":0.1494646668434143,"Top":0.050776537507772446,"Width":0.3127489686012268},"Confidence":99.2813491821289},{"BoundingBox":{"Height":0.709848940372467,"Left":0.6006394624710083,"Top":0.1580326408147812,"Width":0.34776318073272705},"Confidence":99.26979064941406},{"BoundingBox":{"Height":0.20852266252040863,"Left":0.436006098985672,"Top":0.30485793948173523,"Width":0.0739886462688446},"Confidence":98.57361602783203}],"Name":"Person","Parents":[]},{"Confidence":99.2813491821289,"Instances":[{"BoundingBox":{"Height":0.5893679857254028,"Left":0.1494646668434143,"Top":0.050776537507772446,"Width":0.3127489686012268},"Confidence":99.2813491821289}],"Name":"Woman","Parents":[{"Name":"Adult"},{"Name":"Female"},{"Name":"Person"}]},{"Confidence":99.26979064941406,"Instances":[{"BoundingBox":{"Height":0.709848940372467,"Left":0.6006394624710083,"Top":0.1580326408147812,"Width":0.34776318073272705},"Confidence":99.26979064941406}],"Name":"Male","Parents":[{"Name":"Person"}]},{"Confidence":99.26979064941406,"Instances":[{"BoundingBox":{"Height":0.709848940372467,"Left":0.6006394624710083,"Top":0.1580326408147812,"Width":0.34776318073272705},"Confidence":99.26979064941406}],"Name":"Man","Parents":[{"Name":"Adult"},{"Name":"Male"},{"Name":"Person"}]},{"Confidence":97.80828094482422,"Instances":[{"BoundingBox":{"Height":0.2052103579044342,"Left":0.20705141127109528,"Top":0.2691541910171509,"Width":0.17595066130161285},"Confidence":97.80828094482422},{"BoundingBox":{"Height":0.1848166435956955,"Left":0.7113689184188843,"Top":0.6843581199645996,"Width":0.1367672085762024},"Confidence":79.76448822021484}],"Name":"Skateboard","Parents":[]},{"Confidence":92.8738784790039,"Instances":[],"Name":"Clothing","Parents":[]},{"Confidence":92.8738784790039,"Instances":[],"Name":"Footwear","Parents":[{"Name":"Clothing"}]},{"Confidence":92.8738784790039,"Instances":[{"BoundingBox":{"Height":0.06488265097141266,"Left":0.7022780776023865,"Top":0.6608572006225586,"Width":0.07128918170928955},"Confidence":92.8738784790039},{"BoundingBox":{"Height":0.09674835950136185,"Left":0.7147628664970398,"Top":0.6862715482711792,"Width":0.13197064399719238},"Confidence":82.58454895019531}],"Name":"Shoe","Parents":[{"Name":"Clothing"},{"Name":"Footwear"}]},{"Confidence":89.9979019165039,"Instances":[],"Name":"Dancing","Parents":[{"Name":"Leisure Activities"},{"Name":"Person"}]},{"Confidence":89.9979019165039,"Instances":[],"Name":"Leisure Activities","Parents":[]},{"Confidence":72.3017807006836,"Instances":[],"Name":"Accessories","Parents":[]},{"Confidence":72.3017807006836,"Instances":[],"Name":"Jewelry","Parents":[{"Name":"Accessories"}]},{"Confidence":72.3017807006836,"Instances":[{"BoundingBox":{"Height":0.05356942117214203,"Left":0.29142358899116516,"Top":0.16819390654563904,"Width":0.03468230366706848},"Confidence":72.3017807006836}],"Name":"Necklace","Parents":[{"Name":"Accessories"},{"Name":"Jewelry"}]}],"OrientationCorrection":null},"models":{"faces":"Amazon Rekognition (Detect Faces 3.0)","labels":"Amazon Rekognition (Detect Labels 3.0)","text":"Amazon Rekognition (Detect Text 3.0)"},"text":{"TextDetections":[],"TextModelVersion":"3.0"}},"id":"image-1","type":"image"}}`;
+            aug = aug.replaceAll('""', '"');
+
+            var sig = ``;
+
+            this.aioToSign = aio;
+
+            var aio_ = JSON.parse(aio);
+            var aug_ = JSON.parse(aug);
+
+            this.aio = aio_;
+            this.sig = sig;
+            this.aug = aug;
+
+            aio_.elements.forEach((item, i) => {
+              if (aug_[item.id] !== undefined) {
+                var augment = aug_[item.id].augment;
+                item["augment"] = augment;
+              }
+
+              this.addElement(item.type, item.param, item.param, item);
+            });
+            aio_.recipients.forEach((item, i) => {
+              this.addRecipient(item);
+            });
+
+            // app::public
+            if (this.isRecipient("app::public")) {
+              // public.json
+              var parts = window.location.href.split("/");
+              var uuid = this.uuid('author');
+              var aioid = parts[parts.length - 1].replace(".htm", "");
+
+              var url = "https://memori.as/app::public/" + uuid + "/" + aioid + "/public.json";
+
+              if (window.location.href.indexOf("ipfs.w3s.link") != -1) {
+                url = "https://raw.githubusercontent.com/leozeba/app-public/main/app-public/" + uuid + "/" + aioid + "/public.json";
+              }
+
+              fetch(url)
+              .then(function (response) {
+               // The API call was successful!
+                return response.json();
+              }).then(function (data) {
+                M.get("#www").setAttribute("href", data.www);
+                M.get("#ipfs").setAttribute("href", data.ipfs);
+                M.get("#w3link").setAttribute("href", data.w3link);
+              }).catch(function (err) {
+                // There was an error
+                console.warn('Something went wrong.', err);
+              }).finally(() => {
+              });
+            }
+          },
+          title: function(aio) {
+            return M.title(aio);
+          },
+          tags: function(aio) {
+            return M.tags(aio);
+          },
+          addElement: function(type, f, name, el) {
+            var controls = "";
+            var element = "";
+            var value = "";
+
+            f = "assets/" + f;
+
+            if (el === undefined) {
+              this.e = this.e + 1;
+            } else {
+              this.e = parseInt(el.id.split("-")[1]);
+              value = name;
+            }
+
+            if (type == "text") {
+              controls = '<div id="controls-' + this.e + '" class="field has-addons controls"><p class="control"><a class="button is-delete is-small" onclick="removeElement(' + "'" + type + "'" + ', ' + this.e + ')" onMouseOver="highlightElement(' + "'" + type + "'" + ', ' + this.e + ')" onMouseOut="removeHighlightElement(' + "'" + type + "'" + ', ' + this.e + ')"><span class="icon is-small"><i class="fas fa-times"></i></span></a></p></div>';
+              element = controls + '<textarea id="text-' + this.e + '" readonly class="element textarea" rows="1" placeholder="Type something! ex: @leozeba what are you doing?">' + value + '</textarea>';
+
+              if (el != undefined && el.augment != undefined) {
+                var tags = [];
+
+                var cloud = el.augment.cloud;
+                var words = Object.keys(cloud);
+                var counts = [];
+                var keys = el.augment.keys;
+
+                for (var i = 0; i < words.length; i++) {
+                  counts[i] = cloud[words[i]];
+                }
+
+                for (var i = 0; i < keys.length; i++) {
+                  var parts = keys[i].split("-");
+                  var count = parseInt(parts[0]);
+                  var word = parts[1];
+                  var tag = '<span class="tag augment-label is-medium is-rounded" style="border-bottom-left-radius: 10rem; border-top-left-radius: 10rem; padding-right: 0; font-weight: 600;">' + word + '</span><span class="tag is-medium" style="margin-right: 0.5rem; border-bottom-right-radius: 50%; border-top-right-radius: 50%;">' + count + '</span>';
+                  tags.push(tag);
+                }
+
+                element = element + '<div class="control-' + this.e + '"><div id="tags-' + this.e + '" class="tags has-addons">' + tags.join("") + '</div></div>';
+              }
+            }
+
+            if (type == "image") {
+              controls = '<div id="controls-' + this.e + '" class="field has-addons controls"><p class="control"><a class="button is-delete is-small" onclick="removeElement(' + "'" + type + "'" + ', ' + this.e + ')" onMouseOver="highlightElement(' + "'" + type + "'" + ', ' + this.e + ')" onMouseOut="removeHighlightElement(' + "'" + type + "'" + ', ' + this.e + ')"><span class="icon is-small"><i class="fas fa-times"></i></span></a></p></div>';
+              element = controls + '<img id="image-' + this.e + '" class="element image" src="' + f + '.aug"/>';
+
+              if (el != undefined && el.augment != undefined) {
+                var tags = [];
+
+                if (el.augment.labels) {
+                  var labels = el.augment.labels.Labels;
+                  for (var i = 0; i < labels.length; i++) {
+                    var tag = '<span class="tag augment-label is-medium is-rounded">' + labels[i].Name + '</span>';
+                    tags.push(tag);
+                  }
+                }
+
+                if (el.augment.text) {
+                  var text = el.augment.text.TextDetections;
+                  for (var i = 0; i < text.length; i++) {
+                    var tag = '<span class="tag augment-text is-medium is-rounded">' + text[i].DetectedText + '</span>';
+                    if (tags.indexOf(tag) == -1) {
+                      tags.push(tag);
+                    }
+                  }
+                }
+
+
+                if (el.augment.faces) {
+                  var faces = el.augment.faces.FaceDetails;
+                  for (var i = 0; i < faces.length; i++) {
+                    var details = faces[i];
+                    var keys = Object.keys(details);
+
+                    var tag = '<span class="tag augment-face is-medium" style="background: transparent !important; border: none !important; color: var(--color-0) !important;"><span class="icon is-small"><i class="fas fa-user"></i></span></span>';
+                    tags.push(tag);
+
+                    for (var j = 0; j < keys.length; j++) {
+                      var key = keys[j];
+
+                      // AgeRange
+                      if (key == "AgeRange") {
+                        var detail = details[key];
+                        var tag = '<span class="tag augment-face age is-medium is-rounded">' + detail.Low + '-' + detail.High + '</span>';
+                        tags.push(tag);
+                      }
+
+                      // Emotions
+                      if (key == "Emotions") {
+                        var array = details[key];
+
+                        for (var k = 0; k < array.length; k++) {
+                          var item = array[k];
+                          if (item.Type) {
+                            if (item.Confidence > 70.0) {
+                              var tag = '<span class="tag augment-face emotion is-medium is-rounded">' + item.Type + '</span>';
+                              tags.push(tag);
+                            }
+                          }
+                        }
+                      }
+
+                      // Gender
+                      if (key == "Gender") {
+                        var item = details[key];
+                        if (item.Value) {
+                          if (item.Confidence > 70.0) {
+                            var tag = '<span class="tag augment-face gender is-medium is-rounded">' + item.Value + '</span>';
+                            tags.push(tag);
+                          }
+                        }
+                      }
+
+                      // Landmarks
+                      if (key == "Landmarks") {
+                        var item = details[key];
+                        console.log(key);
+                        // console.log(item);
+                      }
+
+                      // Pose
+                      if (key == "Pose") {
+                        var item = details[key];
+                        console.log(key);
+                        // console.log(item);
+                      }
+
+                      // Quality
+                      if (key == "Quality") {
+                        var item = details[key];
+                        console.log(key);
+                        // console.log(item);
+                      }
+
+                      // Beard, Eyeglasses, EyesOpen, MouthOpen, Mustache, Smile, Sunglasses
+                      var value = details[key].Value;
+                      if (value == true) {
+                        var tag = '<span class="tag augment-face is-medium is-rounded">' + keys[j] + '</span>';
+                        tags.push(tag);
+                      }
+                    }
+                  }
+
+                  element = element + '<div id="tags-' + this.e + '" class="tags">' + tags.join("") + '</div>';
+                }
+              }
+            }
+
+            if (type == "video") {
+              controls = '<div id="controls-' + this.e + '" class="field has-addons controls" style="margin-bottom: 0.75rem !important;"><p class="control"><a class="button is-delete is-small" onclick="removeElement(' + "'" + type + "'" + ', ' + this.e + ')" onMouseOver="highlightElement(' + "'" + type + "'" + ', ' + this.e + ')" onMouseOut="removeHighlightElement(' + "'" + type + "'" + ', ' + this.e + ')"><span class="icon is-small"><i class="fas fa-times"></i></span></a></p></div>'
+              element = controls + '<video id="video-' + this.e + '" class="element video" controls><source src="' + f + '" type="video/mp4"></video>'
+            }
+
+            if (type == "file") {
+              controls = '<div id="controls-' + this.e + '" class="field has-addons controls"><p class="control"><a class="button is-delete is-small" onclick="removeElement(' + "'" + type + "'" + ', ' + this.e + ')" onMouseOver="highlightElement(' + "'" + type + "'" + ', ' + this.e + ')" onMouseOut="removeHighlightElement(' + "'" + type + "'" + ', ' + this.e + ')"><span class="icon is-small"><i class="fas fa-times"></i></span></a></p></div>';
+              element = controls + '<p id="file-' + this.e + '" class="element file" style="font-size: 1.85rem;" data-name="' + (el && el.data && el.data["name"] ? el.data["name"] : name) + '" data-content="' + f + '"><a href="' + f + '"><span class="icon is-large"><i class="fas fa-paperclip fa-lg"></span></i>' + (el && el.data && el.data["name"] ? el.data["name"] : name) + '</a></p>'
+            }
+
+            var elements = M.get("#elements");
+            elements.insertAdjacentHTML("beforeend", element);
+
+            // Wordcloud
+            if (counts !== undefined) {
+              var id = this.e;
+              var max = counts.reduce(function(a, b) {
+                return Math.max(a, b);
+              });
+              var containerWidth = +d3.select(".container").style("width").slice(0, -2);
+              var cssFill = getComputedStyle(M.get("body")).getPropertyValue("--color-0");
+              var layout = d3.layout.cloud()
+                .size([containerWidth, 500])
+                .words(words.map(function(d, index) {
+                  return {text: d, size: (cloud[d] / max) * 90, test: "haha"};
+                }))
+                .padding(5)
+                .rotate(function() { return ~~(Math.random() * 2) * 90; })
+                .font("Impact")
+                .fontSize(function(d) { return d.size; })
+                .on("end", function draw(words) {
+                  d3.select(".control-" + id)
+                  .append("svg")
+                  .attr("width", containerWidth)
+                  .attr("height", layout.size()[1])
+                  .append("g")
+                  .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+                  .selectAll("text")
+                  .data(words)
+                  .enter()
+                  .append("text")
+                  .style("font-size", function(d) { return d.size + "px"; })
+                  .style("font-family", "Impact")
+                  .style("fill", cssFill)
+                  .attr("text-anchor", "middle")
+                  .attr("transform", function(d) {
+                    return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                  })
+                  .text(function(d) { return d.text; });
+                });
+              layout.start();
+            }
+
+            autosize(document.querySelectorAll("textarea"));
+
+            // this.showControls("#controls-" + this.e);
+            this.focusOn("#" + type + "-" + this.e);
+          },
+          focusOn: function(element) {
+            M.get(element).focus();
+          },
+          rotate: function() {
+            var el = M.get(".element.image");
+            if (el !== undefined) {
+              var transform = el.style.transform;
+              console.log(transform);
+              if (transform.indexOf("-90") > 0) {
+                transform = "rotate(-180deg)";
+              } else if (transform.indexOf("-180") > 0) {
+                transform = "rotate(-270deg)";
+              } else if (transform.indexOf("-270") > 0) {
+                transform = "rotate(0deg)";
+              } else {
+                transform = "rotate(-90deg)";
+              }
+              el.style.transform = transform;
+            }
+          },
+          uuid: function(type) {
+            if (type == "author") {
+              return this.aio.author;
+            }
+            return M.storage("memori.as-m-uuid");
+          },
+          addRecipient: function(uuid) {
+            for (var i = 0; i < this.accounts.length; i++) {
+              var account = this.accounts[i];
+              if (account.auid == uuid) {
+                this.accounts.splice(i, 1);
+                this.recipients.push(account);
+                break;
+              }
+            }
+          },
+          isRecipient: function(account) {
+            var isRecipient = false;
+            for (var i = 0; i < this.aio.recipients.length; i++) {
+              var recipient = this.aio.recipients[i];
+              if (recipient == account) {
+                isRecipient = true;
+                break;
+              }
+            }
+            if (isRecipient == false) {
+              if (this.uuid() == account) {
+                isRecipient = true;
+              }
+            }
+            return isRecipient;
+          },
+          accountPicture: function(recipient) {
+            var a = "assets/recipient--" + recipient.replace("::", "--") + "-picture.png";
+            return a;
+          },
+          account: function(account) {
+            var r;
+            for (var i = 0; i < this.accounts.length; i++) {
+              var recipient = this.accounts[i];
+              if (recipient["m-auid"] == account) {
+                r = recipient;
+                break;
+              }
+            }
+            if (r == undefined) {
+              r = {};
+            }
+            return r;
+          },
+          picture: function() {
+            return M.storage("memori.as-m-picture");
+          },
+          showCode: function() {
+            M.get("#elements-container").style.display = "none";
+            M.get("#code-container").style.display = "block";
+
+            M.get("#show-code").style.display = "none";
+            M.get("#hide-code").style.display = "block";
+
+            var aio = JSON.stringify(JSON.parse(this.aioToSign), null, 4);
+            var sig = this.sig;
+            var aug = JSON.stringify(JSON.parse(this.aug), null, 4);
+
+            M.get("#aio").innerHTML = aio;
+            M.get("#sig").innerHTML = sig;
+            M.get("#aug").innerHTML = aug;
+          },
+          hideCode: function() {
+            M.get("#elements-container").style.display = "block";
+            M.get("#code-container").style.display = "none";
+
+            M.get("#show-code").style.display = "block";
+            M.get("#hide-code").style.display = "none";
+          },
+          replyProfileImageUrl: function(reply) {
+            var author = this.replyAuthor(reply);
+            return this.accountPicture(author);
+          },
+          replyAuthor: function(reply) {
+            var author = "";
+            var parts = reply.split("&");
+            for (var i = 0; i < parts.length; i++) {
+              var p = parts[i];
+              if (p.indexOf("author=") >= 0) {
+                author = p.replace("author=", "");
+                break;
+              }
+            }
+
+            return author;
+          },
+          replyUpdated: function(reply) {
+            var updated = "";
+            var parts = reply.split("&");
+            for (var i = 0; i < parts.length; i++) {
+              var p = parts[i];
+              if (p.indexOf("updated=") >= 0) {
+                updated = p.replace("updated=", "");
+                break;
+              }
+            }
+
+            return updated;
+          },
+          replyTitle: function(reply) {
+            var title = "";
+            var parts = reply.split("&");
+            for (var i = 0; i < parts.length; i++) {
+              var p = parts[i];
+              if (p.indexOf("title=") >= 0) {
+                title = p.replace("title=", "");
+                break;
+              }
+            }
+
+            return title.split(" #")[0];
+          },
+          replyAio: function(reply) {
+            var aio = "";
+            var parts = reply.split("&");
+            for (var i = 0; i < parts.length; i++) {
+              var p = parts[i];
+              if (p.indexOf("aio=") >= 0) {
+                aio = p.replace("aio=", "");
+                break;
+              }
+            }
+
+            return aio;
+          },
+          showContent: function() {
+            M.get("#the-content").style.display = "block";
+          }
+        },
+        mounted() {
+          this.minit();
+          var message = M.params("message");
+          if (message !== null) {
+            M.showMessage("#app", "is-success", message);
+          }
+        },
+        updated() {
+        }
+      });
+    });
+  </script>
+
+  <script>
+    M.theme();
+  </script>
+
+</body>
+</html>
